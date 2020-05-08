@@ -1,2 +1,3 @@
-# quickscript-test
-Tests for quickscript
+quickscript-test
+================
+README text here.
