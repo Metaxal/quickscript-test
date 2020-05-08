@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require quickscript
-         racket/string)
+(require quickscript)
 
 (define-script string-reverse
   #:label "string-reverse"
