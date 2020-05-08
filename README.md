@@ -1,3 +1,3 @@
 quickscript-test
 ================
-README text here.
+Tests for quickscript
