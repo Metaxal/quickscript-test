@@ -75,6 +75,7 @@
 
    ;; Ask drracket to open file.
    (run-script "open-me")
+   (wait-for-drracket-frame)
    (queue-callback/res
     (λ ()
       (check-equal? (send drr get-tab-count)
@@ -122,7 +123,6 @@
      ;; For this to work, get-text-from-user (tool.rkt) must use
      ;; #:dialog-mixin frame:focus-table-mixin.
      (define script-name-msgbox (wait-for-new-frame drr))
-     (displayln script-name-msgbox)
      (for ([c (in-string new-script-name)])
        (test:keystroke c))
      (test:button-push "OK")
