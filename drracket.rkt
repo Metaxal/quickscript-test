@@ -151,6 +151,7 @@ EOS
           )
         (send text insert new-script-text)))
      (test:menu-select "File" "Save Definitions")
+     (manage-scripts "Reload menu")
      (run-script "new+clipboard")
      (define filestring
        (queue-callback/res
