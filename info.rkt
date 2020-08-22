@@ -9,4 +9,7 @@
 (define scribblings '(("scribblings/quickscript-test.scrbl" ())))
 (define pkg-desc "Tests for Quickscript")
 (define version "0.1")
-#;(define pkg-authors '(laurent))
+(define pkg-authors '(lorseau))
+(define compile-omit-paths '("scripts/unbound-id.rkt"
+                             "scripts/unbound-id-not-skipped.rkt"))
+(define test-omit-paths '(#px"scripts/.*\\.rkt"))

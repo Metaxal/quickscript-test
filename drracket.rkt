@@ -21,6 +21,10 @@
 ;; so that the scripts appear in the menu.
 (define-runtime-path script-dir "scripts")
 (add-third-party-script-directory! script-dir)
+(define lib (load))
+(exclude! lib script-dir "unbound-id.rkt")
+(include! lib script-dir "unbound-id-not-skipped.rkt")
+(save! lib)
 
 (define (run-script name)
   (test:menu-select "Scripts" "Tests" name))
@@ -41,9 +45,47 @@
       (((lib "algol60") ("tool.rkt")) skip)
       ))))
 
+(define (wait-for-dialog/frame title)
+  (define (wait-for-pred)
+    (findf (λ (top)
+             (equal? (send top get-label)
+                     title))
+           (get-top-level-windows)))
+  (poll-until wait-for-pred))
+
+;; Debugging tool.
+(define (display-window-hierarchy wnd)
+  (let loop ([wnd wnd] [depth 0])
+    (printf "~a~a\n" (make-string (* 2 depth) #\space) wnd)
+    (when (is-a? wnd area-container<%>)
+      (for-each (λ (ch) (loop ch (+ depth 1))) (send wnd get-children)))))
+
+(define (find-widget wnd pred)
+  (let loop ([wnd wnd])
+    (if (pred wnd)
+      wnd
+      (and (is-a? wnd area-container<%>)
+           (ormap loop (send wnd get-children))))))
+
 (fire-up-drracket-and-run-tests
  #:prefs prefs
  (λ ()
+   ;; The script "unbound-id-not-skipped" raises an exception on startup.
+   ;; Click ok on the message box and deactivate the script (so as to avoid
+   ;; further exceptions. TODO: deactivate it in Quickscript).
+   (define exn-dialog (wait-for-dialog/frame "Quickscript caught an exception"))
+   (check-not-false exn-dialog)
+   ; deactivate early
+   (exclude! lib script-dir "unbound-id-not-skipped.rkt")
+   (save! lib)
+   (send exn-dialog focus)
+   #;(display-window-hierarchy exn-dialog)
+   (define bt-ok (find-widget exn-dialog (λ (x) (is-a? x button%))))
+   (check-not-false bt-ok)
+   (send bt-ok command (make-object control-event% 'button))
+   ; Now that the script 
+   (displayln "passed")
+
    (define drr (wait-for-drracket-frame))
    (define (get-canvas) (send drr get-definitions-canvas))
    (define (get-text) (send drr get-definitions-text))
@@ -161,6 +203,6 @@ EOS
      (delete-file filestring))
    
 
-   
+   (remove-third-party-script-directory! script-dir)
    (displayln "All done.")
    #t))
