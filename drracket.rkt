@@ -84,7 +84,7 @@
    (check-not-false bt-ok)
    (send bt-ok command (make-object control-event% 'button))
    ; Now that the script 
-   (displayln "passed")
+   #;(displayln "passed")
 
    (define drr (wait-for-drracket-frame))
    (define (get-canvas) (send drr get-definitions-canvas))
@@ -204,5 +204,5 @@ EOS
    
 
    (remove-third-party-script-directory! script-dir)
-   (displayln "All done.")
+   #;(displayln "All done.")
    #t))
