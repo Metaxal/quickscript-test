@@ -5,17 +5,12 @@
          racket/gui/base
          quickscript/library
          framework
-         rackunit)
+         rackunit
+         "base.rkt")
 
 ;; TODO: Add test for when the racket version is changed,
 ;; or Racket BC / Racket CS for user-scripts
 ;; TODO: Test disable script in library?
-
-(define-syntax (debug-read-line stx)
-  (syntax-case stx ()
-      [(_)
-       #`(begin (displayln (format "Line: ~a\n" #,(syntax-line stx)))
-         (read-line))]))
 
 ;; Make sure the scripts subdirectory is registered in Quickscript
 ;; so that the scripts appear in the menu.
@@ -26,46 +21,7 @@
 (include! lib script-dir "unbound-id-not-skipped.rkt")
 (save! lib)
 
-(define (run-script name)
-  (test:menu-select "Scripts" "Tests" name))
-(define (manage-scripts name)
-  (test:menu-select "Scripts" "Manage scripts" name))
-
-(define prefs
-  `((plt:framework-pref:drracket:tools-configuration
-     (
-      ;; Check if quickscript-git exists, and if so disable quickscript.
-      ,@(if (collection-file-path "main.rkt" "quickscript-git" #:fail (λ _ #f))
-          '[(((lib "quickscript") ("tool.rkt")) skip)]
-          '[])
-      ;; Deactivate some scripts for faster loading.
-      (((lib "frtime" "tool") "frtime-tool.rkt") skip)
-      (((lib "deinprogramm") "DMdA/private/DMdA-langs.rkt") skip)
-      (((lib "deinprogramm") "sdp/private/sdp-langs.rkt") skip)
-      (((lib "algol60") ("tool.rkt")) skip)
-      ))))
-
-(define (wait-for-dialog/frame title)
-  (define (wait-for-pred)
-    (findf (λ (top)
-             (equal? (send top get-label)
-                     title))
-           (get-top-level-windows)))
-  (poll-until wait-for-pred))
-
-;; Debugging tool.
-(define (display-window-hierarchy wnd)
-  (let loop ([wnd wnd] [depth 0])
-    (printf "~a~a\n" (make-string (* 2 depth) #\space) wnd)
-    (when (is-a? wnd area-container<%>)
-      (for-each (λ (ch) (loop ch (+ depth 1))) (send wnd get-children)))))
-
-(define (find-widget wnd pred)
-  (let loop ([wnd wnd])
-    (if (pred wnd)
-      wnd
-      (and (is-a? wnd area-container<%>)
-           (ormap loop (send wnd get-children))))))
+(define prefs `(,tools-prefs))
 
 (fire-up-drracket-and-run-tests
  #:prefs prefs
@@ -158,51 +114,10 @@
    (wait-for-drracket-frame)
 
    ;; Create new script.   
-   (begin
-     ; random name.
-     (define new-script-name (format "script-~a" (current-milliseconds)))
-     (manage-scripts "New script…")
-     ;; For this to work, get-text-from-user (tool.rkt) must use
-     ;; #:dialog-mixin frame:focus-table-mixin.
-     (define script-name-msgbox (wait-for-new-frame drr))
-     (for ([c (in-string new-script-name)])
-       (test:keystroke c))
-     (test:button-push "OK")
-     (wait-for-new-frame script-name-msgbox) ; should be drr
-     ; Edit script.
-     (queue-callback/res
-      (λ ()
-        (send (get-canvas) focus)
-        (define text (get-text))
-        (define end (send text last-position))
-        (send text set-position 0 end)
-        (send text clear)
-        (define new-script-text
-          #<<EOS
-#lang racket/base
-
-(require quickscript)
-
-(define-script test-new+clipboard
-  #:label "new+clipboard"
-  #:output-to clipboard
-  #:menu-path ("Tests")
-  (λ (selection #:file f)
-    (path->string f)))
-EOS
-          )
-        (send text insert new-script-text)))
-     (test:menu-select "File" "Save Definitions")
-     (manage-scripts "Reload menu")
-     (run-script "new+clipboard")
-     (define filestring
-       (queue-callback/res
-        (λ ()
-          (send the-clipboard get-clipboard-string 0))))
-     (check-true (file-exists? filestring))
-     (delete-file filestring))
+   (new-script-and-run drr)
    
 
    (remove-third-party-script-directory! script-dir)
    #;(displayln "All done.")
    #t))
+
