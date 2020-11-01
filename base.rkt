@@ -27,13 +27,7 @@
 
 (define tools-prefs
   `(plt:framework-pref:drracket:tools-configuration
-    (
-     ;; Check if quickscript-git exists, and if so disable quickscript.
-     ;; THIS IS OBSELETE
-     ,@(if (collection-file-path "main.rkt" "quickscript-git" #:fail (λ _ #f))
-         '[(((lib "quickscript") ("tool.rkt")) skip)]
-         '[])
-     ;; Deactivate some scripts for faster loading.
+    (;; Deactivate some scripts for faster loading.
      (((lib "frtime" "tool") "frtime-tool.rkt") skip)
      (((lib "deinprogramm") "DMdA/private/DMdA-langs.rkt") skip)
      (((lib "deinprogramm") "sdp/private/sdp-langs.rkt") skip)
