@@ -21,6 +21,17 @@
 (include! lib script-dir "unbound-id-not-skipped.rkt")
 (save! lib)
 
+
+;; Scripts compiled with an old version of racket BC or CS should be recompiled
+;; and not raise an exception.
+(make-directory* (build-path script-dir "compiled"))
+(copy-file (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.zo")
+           (build-path script-dir "compiled" "test-compile_rkt.zo")
+           #t)
+(copy-file (build-path script-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.zo")
+           (build-path script-dir "compiled" "test-compile-cs_rkt.zo")
+           #t)
+
 (define prefs `(,tools-prefs))
 
 (fire-up-drracket-and-run-tests

@@ -11,12 +11,16 @@ This test checks:
 
 also try:
 
-   raco test -l tests/drracket/no-write-and-frame-leak
+  raco test -l tests/drracket/no-write-and-frame-leak
 
-Caveats:
-  - It may not use the right version of quickscript, i.e., quickscript-git
-  - It may raise errors about duplicate labels in the Script menu (but this may be okay?)
-  - It may complain about recompiling scripts (but this may be okay?)
+  Caveats:
+    - It may not use the right version of quickscript, i.e., quickscript-git
+    - It may raise errors about duplicate labels in the Script menu (but this may be okay?)
+    - It may complain about recompiling scripts (but this may be okay?)
+
+Starting DrRacket without write/delete rights but *with* some scripts in the quickscript dir
+will raise a error message, but if writing is disabled, how come there are some user
+scripts (which require write access)?
 
 |#
 

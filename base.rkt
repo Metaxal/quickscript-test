@@ -29,6 +29,7 @@
   `(plt:framework-pref:drracket:tools-configuration
     (
      ;; Check if quickscript-git exists, and if so disable quickscript.
+     ;; THIS IS OBSELETE
      ,@(if (collection-file-path "main.rkt" "quickscript-git" #:fail (λ _ #f))
          '[(((lib "quickscript") ("tool.rkt")) skip)]
          '[])
