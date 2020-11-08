@@ -123,5 +123,6 @@ EOS
     (queue-callback/res
      (λ ()
        (send the-clipboard get-clipboard-string 0))))
+  (check-false (equal? "" filestring))
   (check-true (file-exists? filestring))
   (delete-file filestring))

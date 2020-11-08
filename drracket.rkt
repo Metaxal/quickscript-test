@@ -8,6 +8,11 @@
          rackunit
          "base.rkt")
 
+;;; To debug:
+;;; export PLTSTDERR=debug@quickscript,debug@qstest && racket -l quickscript-test/drracket
+;;; Or
+;;; export PLTSTDERR=debug@qstest && racket -l quickscript-test/drracket
+
 ;; TODO: Add test for when the racket version is changed,
 ;; or Racket BC / Racket CS for user-scripts
 ;; TODO: Test disable script in library?
@@ -21,6 +26,8 @@
 (include! lib script-dir "unbound-id-not-skipped.rkt")
 (save! lib)
 
+(define-logger qstest)
+
 
 ;; Scripts compiled with an old version of racket BC or CS should be recompiled
 ;; and not raise an exception.
@@ -28,8 +35,14 @@
 (copy-file (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.zo")
            (build-path script-dir "compiled" "test-compile_rkt.zo")
            #t)
+(copy-file (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.dep")
+           (build-path script-dir "compiled" "test-compile_rkt.dep")
+           #t)
 (copy-file (build-path script-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.zo")
            (build-path script-dir "compiled" "test-compile-cs_rkt.zo")
+           #t)
+(copy-file (build-path script-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.dep")
+           (build-path script-dir "compiled" "test-compile-cs_rkt.dep")
            #t)
 
 (define prefs `(,tools-prefs))
@@ -40,12 +53,15 @@
    ;; The script "unbound-id-not-skipped" raises an exception on startup.
    ;; Click ok on the message box and deactivate the script (so as to avoid
    ;; further exceptions. TODO: deactivate it in Quickscript).
+   (log-qstest-info "Before exception dialog")
    (define exn-dialog (wait-for-dialog/frame "Quickscript caught an exception"))
    (check-not-false exn-dialog)
+   (log-qstest-info "Exception dialog found")
    ; deactivate early
    (exclude! lib script-dir "unbound-id-not-skipped.rkt")
    (save! lib)
    (send exn-dialog focus)
+   (log-qstest-info "After exception dialog")
    #;(display-window-hierarchy exn-dialog)
    (define bt-ok (find-widget exn-dialog (λ (x) (is-a? x button%))))
    (check-not-false bt-ok)
