@@ -3,7 +3,7 @@
 (require tests/drracket/private/drracket-test-util
          racket/runtime-path
          racket/gui/base
-         quickscript/library
+         (prefix-in lib: quickscript/library)
          framework
          rackunit
          "base.rkt")
@@ -20,11 +20,11 @@
 ;; Make sure the scripts subdirectory is registered in Quickscript
 ;; so that the scripts appear in the menu.
 (define-runtime-path script-dir "scripts")
-(add-third-party-script-directory! script-dir)
-(define lib (load))
-(exclude! lib script-dir "unbound-id.rkt")
-(include! lib script-dir "unbound-id-not-skipped.rkt")
-(save! lib)
+(lib:add-third-party-script-directory! script-dir)
+(define lib (lib:load))
+(lib:exclude! lib script-dir "unbound-id.rkt")
+(lib:include! lib script-dir "unbound-id-not-skipped.rkt")
+(lib:save! lib)
 
 (define-logger qstest)
 
@@ -58,8 +58,8 @@
    (check-not-false exn-dialog)
    (log-qstest-info "Exception dialog found")
    ; deactivate early
-   (exclude! lib script-dir "unbound-id-not-skipped.rkt")
-   (save! lib)
+   (lib:exclude! lib script-dir "unbound-id-not-skipped.rkt")
+   (lib:save! lib)
    (send exn-dialog focus)
    (log-qstest-info "After exception dialog")
    #;(display-window-hierarchy exn-dialog)
@@ -96,6 +96,15 @@
       (check string-suffix?
              (send (get-text) get-text)
              "in new tab")))
+   (wait-for-drracket-frame)
+
+   ;; Simulate a recompilation of a script from a different racket version
+   ;; after DrRacket has started.
+   (copy-file (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.dep")
+              (build-path script-dir "compiled" "test-compile_rkt.dep")
+              #t)
+   ;;This does nothing but should not raise a compilation error exception.
+   (run-script "test-compile")
    (wait-for-drracket-frame)
 
    ;; Ask drracket to open file.
@@ -144,7 +153,7 @@
    (new-script-and-run drr)
    
 
-   (remove-third-party-script-directory! script-dir)
+   (lib:remove-third-party-script-directory! script-dir)
    #;(displayln "All done.")
    #t))
 
