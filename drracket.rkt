@@ -28,21 +28,31 @@
 
 (define-logger qstest)
 
+(define test-compiled-old-zo (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.zo"))
+(define test-compiled-old-dep (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.dep"))
+(define test-compiled-zo (build-path script-dir "compiled" "test-compile_rkt.zo"))
+(define test-compiled-dep (build-path script-dir "compiled" "test-compile_rkt.dep"))
+
+(define test-compiled-cs-old-zo (build-path script-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.zo"))
+(define test-compiled-cs-old-dep (build-path script-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.dep"))
+(define test-compiled-cs-zo (build-path script-dir "compiled" "test-compile-cs_rkt.zo"))
+(define test-compiled-cs-dep (build-path script-dir "compiled" "test-compile-cs_rkt.dep"))
+
 
 ;; Scripts compiled with an old version of racket BC or CS should be recompiled
 ;; and not raise an exception.
 (make-directory* (build-path script-dir "compiled"))
-(copy-file (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.zo")
-           (build-path script-dir "compiled" "test-compile_rkt.zo")
+(copy-file test-compiled-old-zo
+           test-compiled-zo
            #t)
-(copy-file (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.dep")
-           (build-path script-dir "compiled" "test-compile_rkt.dep")
+(copy-file test-compiled-old-dep
+           test-compiled-dep
            #t)
-(copy-file (build-path script-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.zo")
-           (build-path script-dir "compiled" "test-compile-cs_rkt.zo")
+(copy-file test-compiled-cs-old-zo
+           test-compiled-cs-zo
            #t)
-(copy-file (build-path script-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.dep")
-           (build-path script-dir "compiled" "test-compile-cs_rkt.dep")
+(copy-file test-compiled-cs-old-dep
+           test-compiled-cs-dep
            #t)
 
 (define prefs `(,tools-prefs))
@@ -100,8 +110,8 @@
 
    ;; Simulate a recompilation of a script from a different racket version
    ;; after DrRacket has started.
-   (copy-file (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.dep")
-              (build-path script-dir "compiled" "test-compile_rkt.dep")
+   (copy-file test-compiled-old-dep
+              test-compiled-dep
               #t)
    ;;This does nothing but should not raise a compilation error exception.
    (run-script "test-compile")
