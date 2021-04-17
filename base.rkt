@@ -72,6 +72,11 @@
      old-quickscript-dir
      (λ (new-dir)
        (when new-dir
+         (unless (directory-exists? new-dir)
+           (error (format (string-append
+                           "quickscript backup directory should exist but doesn't: ~a.\n"
+                           "Can't restore directory")
+                          new-dir)))
          (when (directory-exists? quickscript-dir)
            (delete-directory/files quickscript-dir))
          ;; move back from the temp name to the correct name

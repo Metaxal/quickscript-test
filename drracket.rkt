@@ -9,7 +9,7 @@
          "base.rkt")
 
 ;;; To debug:
-;;; export PLTSTDERR=debug@quickscript,debug@qstest && racket -l quickscript-test/drracket
+;;; export PLTSTDERR="debug@quickscript debug@qstest" && racket -l quickscript-test/drracket
 ;;; Or
 ;;; export PLTSTDERR=debug@qstest && racket -l quickscript-test/drracket
 
@@ -64,7 +64,8 @@
    ;; Click ok on the message box and deactivate the script (so as to avoid
    ;; further exceptions. TODO: deactivate it in Quickscript).
    (log-qstest-info "Before exception dialog")
-   (define exn-dialog (wait-for-dialog/frame "Quickscript caught an exception"))
+   (define exn-dialog (wait-for-dialog/frame "Quickscript: Error during compilation"))
+   #;(define exn-dialog (wait-for-dialog/frame "Quickscript caught an exception"))
    (check-not-false exn-dialog)
    (log-qstest-info "Exception dialog found")
    ; deactivate early
@@ -76,6 +77,15 @@
    (define bt-ok (find-widget exn-dialog (λ (x) (is-a? x button%))))
    (check-not-false bt-ok)
    (send bt-ok command (make-object control-event% 'button))
+
+   #; ; There will not be an error while loading the menus as the script is deactivated
+   (begin
+     (define exn-dialog2 (wait-for-dialog/frame "Quickscript: Errors while loading script properties"))
+     (check-not-false exn-dialog2)
+     (define bt-ok2 (find-widget exn-dialog2 (λ (x) (is-a? x button%))))
+     (check-not-false bt-ok2)
+     (send bt-ok2 command (make-object control-event% 'button)))
+
    ; Now that the script 
    #;(displayln "passed")
 
