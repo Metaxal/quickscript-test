@@ -23,7 +23,7 @@
   (test:menu-select "Scripts" "Tests" name))
 
 (define (manage-scripts name)
-  (test:menu-select "Scripts" "Manage scripts" name))
+  (test:menu-select "Scripts" "Manage" name))
 
 (define tools-prefs
   `(plt:framework-pref:drracket:tools-configuration

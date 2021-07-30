@@ -65,7 +65,6 @@
    ;; further exceptions. TODO: deactivate it in Quickscript).
    (log-qstest-info "Before exception dialog")
    (define exn-dialog (wait-for-dialog/frame "Quickscript: Error during compilation"))
-   #;(define exn-dialog (wait-for-dialog/frame "Quickscript caught an exception"))
    (check-not-false exn-dialog)
    (log-qstest-info "Exception dialog found")
    ; deactivate early
@@ -163,7 +162,7 @@
     (λ () (check string-suffix? (send (get-text) get-text) "\n0")))
    (wait-for-drracket-frame)
    ;; Unload persistent scripts.
-   (manage-scripts "Unload persistent scripts")
+   (manage-scripts "Stop persistent scripts")
    (run-script "increase-counter")
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n1")))
