@@ -5,5 +5,8 @@
 (define-script string-reverse
   #:label "string-reverse"
   #:menu-path ("Tests")
-  (λ (selection)
-    (apply string (reverse (string->list selection)))))
+  (λ (selection #:other-keyword [y ""] . rst)
+    (apply string-append
+           (apply string (reverse (string->list selection)))
+           ""
+           rst)))
