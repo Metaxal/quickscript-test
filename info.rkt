@@ -13,3 +13,4 @@
 (define compile-omit-paths '("scripts/unbound-id.rkt"
                              "scripts/unbound-id-not-skipped.rkt"))
 (define test-omit-paths '(#px"scripts/.*\\.rkt"))
+(define license 'Apache-2.0)
