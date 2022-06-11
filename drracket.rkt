@@ -146,7 +146,9 @@
    ;; Persistent.
    (queue-callback/res
     (λ () (send drr create-new-tab)))
-   (wait-for-drracket-frame)
+   ;; Make sure the tab is created.
+   (poll-until (λ () (= 3 (send drr get-tab-count))))
+   #;(wait-for-drracket-frame)
    (run-script "show-counter")
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n0")))
