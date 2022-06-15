@@ -94,6 +94,7 @@
 
    ;; Call scripts on text editor
    (queue-callback/res (λ () (send (get-canvas) focus)))
+   (poll-until (lambda () (send (get-canvas) has-focus?)))
    (run-script "string-insert")
    (wait-for-drracket-frame)
    (run-script "string-reverse")
