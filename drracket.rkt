@@ -91,10 +91,17 @@
    (define drr (wait-for-drracket-frame))
    (define (get-canvas) (send drr get-definitions-canvas))
    (define (get-text) (send drr get-definitions-text))
+   (define (ensure-canvas-has-focus)
+     (queue-callback/res (λ () (send (get-canvas) focus)))
+     (poll-until (lambda () (send (get-canvas) has-focus?))))
+   (define (create-new-tab)
+     (queue-callback/res
+      (λ () (send drr create-new-tab)))
+     ;; Make sure the tab is created.
+     (poll-until (λ () (= 3 (send drr get-tab-count)))))   
 
    ;; Call scripts on text editor
-   (queue-callback/res (λ () (send (get-canvas) focus)))
-   (poll-until (lambda () (send (get-canvas) has-focus?)))
+   (ensure-canvas-has-focus)
    (run-script "string-insert")
    (wait-for-drracket-frame)
    (run-script "string-reverse")
@@ -145,31 +152,28 @@
    (wait-for-drracket-frame)
 
    ;; Persistent.
-   (queue-callback/res
-    (λ () (send drr create-new-tab)))
-   ;; Make sure the tab is created.
-   (poll-until (λ () (= 3 (send drr get-tab-count))))
-   #;(wait-for-drracket-frame)
+   (create-new-tab)
+   (ensure-canvas-has-focus)
    (run-script "show-counter")
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n0")))
-   (wait-for-drracket-frame)
+   (ensure-canvas-has-focus)
    (run-script "increase-counter")
    (run-script "increase-counter")
    (run-script "increase-counter")
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n3")))
-   (wait-for-drracket-frame)
+   (ensure-canvas-has-focus)
    (run-script "show-counter")
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n0")))
-   (wait-for-drracket-frame)
+   (ensure-canvas-has-focus)
    ;; Unload persistent scripts.
    (manage-scripts "Stop persistent scripts")
    (run-script "increase-counter")
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n1")))
-   (wait-for-drracket-frame)
+   (ensure-canvas-has-focus)
 
    ;; Create new script.   
    (new-script-and-run drr)
