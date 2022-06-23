@@ -89,33 +89,34 @@
    #;(displayln "passed")
 
    (define drr (wait-for-drracket-frame))
-   (define (get-canvas) (send drr get-definitions-canvas))
+   (define (get-defs-canvas) (send drr get-definitions-canvas))
    (define (get-text) (send drr get-definitions-text))
-   (define (ensure-canvas-has-focus)
-     (queue-callback/res (λ () (send (get-canvas) focus)))
-     (poll-until (lambda () (send (get-canvas) has-focus?))))
+   (define (ensure-defs-has-focus)
+     (queue-callback/res (λ () (send (get-defs-canvas) focus)))
+     ;; This should not be necessary since queue-callback/res is synchronous :/
+     (poll-until (lambda () (send (get-defs-canvas) has-focus?))))
    (define (create-new-tab)
      (queue-callback/res
       (λ () (send drr create-new-tab)))
      ;; Make sure the tab is created.
-     (poll-until (λ () (= 3 (send drr get-tab-count)))))   
+     (poll-until (λ () (= 3 (send drr get-tab-count)))))
+   
 
    ;; Call scripts on text editor
-   (ensure-canvas-has-focus)
+   (ensure-defs-has-focus)
    (run-script "string-insert")
-   (wait-for-drracket-frame)
+   (ensure-defs-has-focus)
    (run-script "string-reverse")
-   (wait-for-drracket-frame)
+   (ensure-defs-has-focus)
    (queue-callback/res
     (λ ()
       (check string-suffix? ; suffix in case of a pre-inserted #lang line
              (send (get-text) get-text)
              "rotide eht si sihT")))
-   (wait-for-drracket-frame)
 
    ;; output-to new-tab
    (run-script "output-to-new-tab")
-   (wait-for-drracket-frame)
+   (ensure-defs-has-focus)
    (queue-callback/res
     (λ ()
       (check-equal? (send drr get-tab-count)
@@ -123,7 +124,6 @@
       (check string-suffix?
              (send (get-text) get-text)
              "in new tab")))
-   (wait-for-drracket-frame)
 
    ;; Simulate a recompilation of a script from a different racket version
    ;; after DrRacket has started.
@@ -132,48 +132,48 @@
               #t)
    ;;This does nothing but should not raise a compilation error exception.
    (run-script "test-compile")
-   (wait-for-drracket-frame)
-
+   (ensure-defs-has-focus)
+   
    ;; Ask drracket to open file.
    (run-script "open-me")
-   (wait-for-drracket-frame)
+   (ensure-defs-has-focus)
    (queue-callback/res
     (λ ()
       (check-equal? (send drr get-tab-count)
                     3)
       (check-equal? (send drr get-tab-filename 2)
                     "open-me.rkt")))
-   (wait-for-drracket-frame)
+   
 
    (run-script "close-tab")
+   (ensure-defs-has-focus)
    (queue-callback/res
     (λ () (check-equal? (send drr get-tab-count)
                         2)))
-   (wait-for-drracket-frame)
 
    ;; Persistent.
    (create-new-tab)
-   (ensure-canvas-has-focus)
+   (ensure-defs-has-focus)
    (run-script "show-counter")
+   (ensure-defs-has-focus)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n0")))
-   (ensure-canvas-has-focus)
    (run-script "increase-counter")
    (run-script "increase-counter")
    (run-script "increase-counter")
+   (ensure-defs-has-focus)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n3")))
-   (ensure-canvas-has-focus)
    (run-script "show-counter")
+   (ensure-defs-has-focus)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n0")))
-   (ensure-canvas-has-focus)
    ;; Unload persistent scripts.
    (manage-scripts "Stop persistent scripts")
    (run-script "increase-counter")
+   (ensure-defs-has-focus)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n1")))
-   (ensure-canvas-has-focus)
 
    ;; Create new script.   
    (new-script-and-run drr)
