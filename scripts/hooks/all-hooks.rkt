@@ -30,7 +30,8 @@
 (define-hook* after-save-file #:hook-editor ed  #:file f)
 (define-hook* on-tab-close #:tab tab)
 (define-hook* on-tab-change #:tab-from ft #:tab-to tt)
-(define-hook* after-create-new-tab #:tab tab) ; TEST TODO: create a new tab
+(define-hook* after-create-new-tab #:tab tab)
+(define-hook* after-open-file-in-new-tab #:file f #:filename f2)
 
 ;; TODO: An error should be shown for this one:
 (define-hook* undefined #:show? show?)

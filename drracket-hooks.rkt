@@ -32,8 +32,18 @@
 
 (define (check-hook-messages . msgs)
   (for ([msg  (in-list msgs)])
-    (check-match (sync/timeout 1 lg-rec)
-                 (vector 'debug msg #f 'qs-test))))
+    (define v (sync/timeout 1 lg-rec))
+    (define rx (if (regexp? msg) msg (pregexp (regexp-quote msg))))
+    (match v
+      [(vector 'debug msg2 #f 'qs-test)
+       (unless (regexp-match rx msg2)
+         (eprintf "Fail check.\n Hook message: ~v\n Expected: ~v\n" msg2 msg))]
+      [else
+       (error "Bad hook message" v)])
+    #;(writeln v)
+    ;;check-match does not display good error messages here
+    #;(check-match v
+                 (vector 'debug (pregexp (if (regexp? msg) msg (regexp-quote msg))) #f 'qs-test))))
 
 (fire-up-drracket-and-run-tests
  #:prefs prefs
@@ -64,25 +74,31 @@
     "qs-test: hook: on-startup\n"
     "qs-test: hook: after-create-new-drracket-frame\n[#:show? #f]\n")
 
-   (define (prx . xs)
-     (pregexp (string-append* (map (λ (x) (if (list? x) (regexp-quote (car x)) x)) xs))))
+   (define (prx msg)
+     (define l (string-split msg "ARG"))
+     (pregexp (string-append* (add-between (map regexp-quote l) "[^\n]*"))))
 
    (define prx-on-tab-change
-     (prx '("qs-test: hook: on-tab-change\n[#:tab-from ") "[^\n]*" '("\n[#:tab-to ") "[^\n]" '("]\n")))
+     (prx "qs-test: hook: on-tab-change\n[#:tab-from ARG\n[#:tab-to ARG]\n"))
+
+   ;; TODO: Check hook events when loading a file in the first untouched empty tab
    
    (create-new-tab)
    (check-hook-messages
     ;; WARNING: need to use a regexp maybe
     prx-on-tab-change
-    (prx '("qs-test: hook: after-create-new-tab\n[#:tab ") "[^\n]" '("]\n")))
+    (prx "qs-test: hook: after-create-new-tab\n[#:tab ARG]\n"))
    
-   #;(create-new-tab (build-path script-dir "all-hooks-FAIL.rkt"))
    (create-new-tab (build-path script-dir "all-hooks.rkt"))
    (check-hook-messages
     ;; WARNING: order is reversed compared to create-new-tab, because don't use the same methods?
     ;; or because of async?
-    (prx '("qs-test: hook: after-load-file\n[#:hook-editor ") "[^\n]*" '("]\n[#:file #f]\n"))
-    prx-on-tab-change)
+    (prx "qs-test: hook: after-load-file\n[#:hook-editor ARG]\n[#:file #f]\n")
+    prx-on-tab-change
+    ;; NOTICE: This hook is better because it is called AFTER the tab change,
+    ;; but unfortunately it's not called when loading in the current tab for the very first file load.
+    ;; TODO: unify the two cases!
+    (prx "qs-test: hook: after-open-file-in-new-tab\n[#:file ARG]\n[#:filename ARG]\n"))
 
    ;; Clean up
    (lib:remove-third-party-script-directory! script-dir)
@@ -108,15 +124,13 @@
    (send drr close)
 
    ;; WARNING: This message is sometimes not caught!
-   (check-hook-messages
-    "qs-test: hook: on-close\n")
+   (check-hook-messages "qs-test: hook: on-close\n")
 
    ;; Get all messages
    (let loop ()
      (define msg (sync/timeout 1 lg-rec))
      (when msg
-       (displayln "Missed message:")
-       (writeln msg)
+       (eprintf "Missed hook message: ~v\n" msg)
        (loop)))
    
    #t))
