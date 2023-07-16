@@ -25,13 +25,13 @@
 (define-hook* on-startup)
 (define-hook* on-close)
 (define-hook* after-create-new-drracket-frame #:show? show?)
-(define-hook* after-load-file #:hook-editor ed #:file f)
-(define-hook* on-save-file #:hook-editor ed #:save-filename sf #:file f)
-(define-hook* after-save-file #:hook-editor ed  #:file f)
+(define-hook* after-load-file #;#;#:hook-editor ed #:file f #:in-new-tab? in-new-tab?)
+(define-hook* on-save-file #:save-filename sf #:file f)
+(define-hook* after-save-file #:file f)
 (define-hook* on-tab-close #:tab tab)
 (define-hook* on-tab-change #:tab-from ft #:tab-to tt)
-(define-hook* after-create-new-tab #:tab tab)
-(define-hook* after-open-file-in-new-tab #:file f #:filename f2)
+(define-hook* after-create-new-tab #;#;#:tab tab)
+#;(define-hook* after-open-file-in-new-tab #:file f #:filename f2) ; superseded by after-load-file
 
 ;; TODO: An error should be shown for this one:
 (define-hook* undefined #:show? show?)

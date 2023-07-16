@@ -9,20 +9,27 @@
          syntax/parse/define
          "base.rkt")
 
+;;; Try with
+;;;   raco test drracket-hooks.rkt
+;;; but be sure to try also with 
+;;;   raco test --drdr  drracket-hooks.rkt
+;;; In particular, this ensures that a fresh user is created with no script.
+
 ;;; To debug:
 ;;; export PLTSTDERR="debug@quickscript debug@qstest" && racket -l quickscript-test/drracket
 ;;; Or
 ;;; export PLTSTDERR=debug@qstest && racket -l quickscript-test/drracket
 
-;; TODO: Add test for when the racket version is changed,
-;; or Racket BC / Racket CS for user-scripts
-;; TODO: Test disable script in library?
-
 ;; Make sure the scripts subdirectory is registered in Quickscript
 ;; so that the scripts appear in the menu.
 (define-runtime-path script-dir "scripts/hooks")
 (lib:add-third-party-script-directory! script-dir)
-(define lib (lib:load))
+
+(define all-hooks-filename "all-hooks.rkt")
+(define all-hooks-path (build-path script-dir all-hooks-filename))
+;; Used only to load a file
+(define string-reverse-filename "string-reverse.rkt")
+(define string-reverse-script-path (build-path script-dir 'up string-reverse-filename))
 
 (define-logger qstest)
 
@@ -30,20 +37,24 @@
 
 (define lg-rec (make-log-receiver (current-logger) 'debug 'qs-test))
 
+(define (prx msg)
+  (define l (string-split msg "ARG"))
+  (pregexp (string-append* (add-between (map regexp-quote l) "[^\n]*"))))
+
+(define prx-on-tab-change
+  (prx "qs-test: hook: on-tab-change\n[#:tab-from ARG\n[#:tab-to ARG]\n"))
+
 (define (check-hook-messages . msgs)
   (for ([msg  (in-list msgs)])
     (define v (sync/timeout 1 lg-rec))
     (define rx (if (regexp? msg) msg (pregexp (regexp-quote msg))))
     (match v
       [(vector 'debug msg2 #f 'qs-test)
-       (unless (regexp-match rx msg2)
+       (if (regexp-match rx msg2)
+         (printf "hook check passed: ~v\n" v)
          (eprintf "Fail check.\n Hook message: ~v\n Expected: ~v\n" msg2 msg))]
       [else
-       (error "Bad hook message" v)])
-    #;(writeln v)
-    ;;check-match does not display good error messages here
-    #;(check-match v
-                 (vector 'debug (pregexp (if (regexp? msg) msg (regexp-quote msg))) #f 'qs-test))))
+       (eprintf "Bad hook message.\n Got: ~v\n Expected: ~v\n" v msg)])))
 
 (fire-up-drracket-and-run-tests
  #:prefs prefs
@@ -74,35 +85,35 @@
     "qs-test: hook: on-startup\n"
     "qs-test: hook: after-create-new-drracket-frame\n[#:show? #f]\n")
 
-   (define (prx msg)
-     (define l (string-split msg "ARG"))
-     (pregexp (string-append* (add-between (map regexp-quote l) "[^\n]*"))))
+   ;; Load a file in the first untouched empty tab
+   (handler:edit-file string-reverse-script-path)
+   (check-hook-messages
+    (prx (format "qs-test: hook: after-load-file\n[#:file ARG~a]\n[#:in-new-tab? #f]\n"
+                 string-reverse-filename)))
 
-   (define prx-on-tab-change
-     (prx "qs-test: hook: on-tab-change\n[#:tab-from ARG\n[#:tab-to ARG]\n"))
-
-   ;; TODO: Check hook events when loading a file in the first untouched empty tab
-   
+   ;; Create empty new tab
    (create-new-tab)
    (check-hook-messages
-    ;; WARNING: need to use a regexp maybe
     prx-on-tab-change
-    (prx "qs-test: hook: after-create-new-tab\n[#:tab ARG]\n"))
-   
-   (create-new-tab (build-path script-dir "all-hooks.rkt"))
+    (prx "qs-test: hook: after-create-new-tab\n"))
+
+   ;; Open file in new tab
+   (create-new-tab all-hooks-path)
    (check-hook-messages
-    ;; WARNING: order is reversed compared to create-new-tab, because don't use the same methods?
-    ;; or because of async?
-    (prx "qs-test: hook: after-load-file\n[#:hook-editor ARG]\n[#:file #f]\n")
     prx-on-tab-change
-    ;; NOTICE: This hook is better because it is called AFTER the tab change,
-    ;; but unfortunately it's not called when loading in the current tab for the very first file load.
-    ;; TODO: unify the two cases!
-    (prx "qs-test: hook: after-open-file-in-new-tab\n[#:file ARG]\n[#:filename ARG]\n"))
+    (prx (format "qs-test: hook: after-load-file\n[#:file ARG~a]\n[#:in-new-tab? #t]\n"
+                 all-hooks-filename)))
+
+   ;; Close current tab
+   (close-current-tab)
+   (check-hook-messages
+    (prx "qs-test: hook: on-tab-close\n")
+    prx-on-tab-change)
+
+   ;; TODO: save file hook
 
    ;; Clean up
    (lib:remove-third-party-script-directory! script-dir)
-   #;(displayln "All done.")
 
    ;; Make sure hooks are removed after Reload Menu without the hooks
    (manage-scripts "Reload menu")
@@ -122,8 +133,6 @@
                                                                        "Quit")))))
              (send bt-ok command (make-object control-event% 'button))))
    (send drr close)
-
-   ;; WARNING: This message is sometimes not caught!
    (check-hook-messages "qs-test: hook: on-close\n")
 
    ;; Get all messages
