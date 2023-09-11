@@ -21,7 +21,6 @@
         #;(writeln str)
         (log-message (current-logger) 'debug 'qs-test str))))
 
-;; TODO: Automated tests!
 (define-hook* on-startup)
 (define-hook* on-close)
 (define-hook* after-create-new-drracket-frame #:show? show?)
@@ -33,5 +32,6 @@
 (define-hook* after-create-new-tab #;#;#:tab tab)
 #;(define-hook* after-open-file-in-new-tab #:file f #:filename f2) ; superseded by after-load-file
 
-;; TODO: An error should be shown for this one:
-(define-hook* undefined #:show? show?)
+;; An error should be shown for this one:
+;; This is now done at the syntax level.
+#;(define-hook* undefined #:show? show?)
