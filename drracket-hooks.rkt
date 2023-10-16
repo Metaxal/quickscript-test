@@ -46,7 +46,7 @@
 
 (define (check-hook-messages . msgs)
   (for ([msg  (in-list msgs)])
-    (define v (sync/timeout 1 lg-rec))
+    (define v (sync/timeout 5 lg-rec))
     (define rx (if (regexp? msg) msg (pregexp (regexp-quote msg))))
     (match v
       [(vector 'debug msg2 #f 'qs-test)

@@ -99,7 +99,7 @@
    (define ensure-defs-has-focus-idx 0)
    (define (ensure-defs-has-focus)
      ;; debug info:
-     (eprintf "ensure-defs-has-focus call #~a\n" ensure-defs-has-focus-idx)
+     (printf "ensure-defs-has-focus call #~a\n" ensure-defs-has-focus-idx)
      (set! ensure-defs-has-focus-idx (+ 1 ensure-defs-has-focus-idx))
      (queue-callback/res (λ () (send (get-defs-canvas) focus)))
      ;; This should not be necessary since queue-callback/res is synchronous :/
