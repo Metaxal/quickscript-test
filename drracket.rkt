@@ -93,13 +93,14 @@
      (check-not-false bt-ok2)
      (send bt-ok2 command (make-object control-event% 'button)))
 
-   ; Now that the script
-   #;(displayln "passed")
-
    (define drr (wait-for-drracket-frame))
    (define (get-defs-canvas) (send drr get-definitions-canvas))
    (define (get-text) (send drr get-definitions-text))
+   (define ensure-defs-has-focus-idx 0)
    (define (ensure-defs-has-focus)
+     ;; debug info:
+     (eprintf "ensure-defs-has-focus call #~a\n" ensure-defs-has-focus-idx)
+     (set! ensure-defs-has-focus-idx (+ 1 ensure-defs-has-focus-idx))
      (queue-callback/res (λ () (send (get-defs-canvas) focus)))
      ;; This should not be necessary since queue-callback/res is synchronous :/
      (poll-until (lambda () (send (get-defs-canvas) has-focus?))))

@@ -141,7 +141,6 @@ EOS
   (check-pred file-exists? script-file)
   (test:menu-select "File" "Save Definitions")
   (manage-scripts "Reload menu") ; WARNING: It is unknown when this will finish!
-  #;(sleep 60)
   (run-script "abcdef")
   (queue-callback/res
    (λ ()
