@@ -4,8 +4,9 @@
          racket/runtime-path
          racket/gui/base
          (prefix-in lib: quickscript/library)
-         framework
+         framework/test
          rackunit
+         quickscript/base
          "base.rkt")
 
 ;;; To debug:
@@ -16,6 +17,13 @@
 ;; TODO: Add test for when the racket version is changed,
 ;; or Racket BC / Racket CS for user-scripts
 ;; TODO: Test disable script in library?
+
+;; NOTICE: Use `queue-callback/res` instead of `queue-callback` because for the latter
+;; errors may not be (re)raised leading to silent bugs.
+
+;; Make sure the user script library is included, otherwise some tests will fail, like
+;; when creating a new script.
+(lib:add-third-party-script-directory! user-script-dir)
 
 ;; Make sure the scripts subdirectory is registered in Quickscript
 ;; so that the scripts appear in the menu.
@@ -180,7 +188,6 @@
 
    ;; Create new script.
    (new-script-and-run drr)
-
 
    (lib:remove-third-party-script-directory! script-dir)
    #;(displayln "All done.")

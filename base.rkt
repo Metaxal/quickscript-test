@@ -4,14 +4,19 @@
 
 (require tests/drracket/private/drracket-test-util
          racket/gui/base
-         framework
+         framework/test
          rackunit
          ffi/unsafe/custodian
-         quickscript/base)
+         quickscript/base
+         (for-syntax syntax/location))
 
 ;; TODO: Add test for when the racket version is changed,
 ;; or Racket BC / Racket CS for user-scripts
-;; TODO: Test disable script in library?
+
+(define-syntax (dbg stx)
+  (syntax-case stx ()
+      [(_)
+       #`(eprintf "Line: ~a source: ~a\n" #,(syntax-line stx) #,(syntax-source-file-name stx))]))
 
 (define-syntax (debug-read-line stx)
   (syntax-case stx ()
@@ -42,6 +47,9 @@
            (get-top-level-windows)))
   (poll-until wait-for-pred))
 
+(define (wait-for-pending-actions)
+  (poll-until (λ () (= 0 (test:number-pending-actions)))))
+
 ;; Debugging tool.
 (define (display-window-hierarchy wnd)
   (let loop ([wnd wnd] [depth 0])
@@ -59,6 +67,7 @@
 ;; Moves the current quickscript directory to a different place until
 ;; the end of the test, then moves it back (using a custodian).
 ;; WARNING: Ctrl-C will prevent moving it back!
+;; THIS IS RISKY (not used in main test suite for now)
 (define old-quickscript-dir #f)
 (define (remove-quickscript-dir-until-exit!)
   (when (directory-exists? quickscript-dir)
@@ -106,28 +115,37 @@
      (define end (send text last-position))
      (send text set-position 0 end)
      (send text clear)
+     ;; NOTICE: A typo in the code below will be completely silent,
+     ;; and the script will just not appear in the menu, leading
+     ;; to a `run-script` failing to find the menu item.
      (define new-script-text
        #<<EOS
 #lang racket/base
 
 (require quickscript)
 
-(define-script test-new+clipboard
-  #:label "new+clipboard"
-  #:output-to clipboard
+(define-script test-abcdef
+  #:label "abcdef"
+  #:output-to new-tab
   #:menu-path ("Tests")
   (λ (selection #:file f)
-    (path->string f)))
+    "abcdef"))
 EOS
        )
      (send text insert new-script-text)))
+  ;; NOTICE: Make sure file running this script adds `user-script-dir` to the
+  ;; library with:
+  #;(lib:add-third-party-script-directory! user-script-dir)
+  ;; early in the file, because `raco test --drdr` creates a new directory.
+  (define script-file (build-path user-script-dir (string-append new-script-name ".rkt")))
+  (check-pred file-exists? script-file)
   (test:menu-select "File" "Save Definitions")
-  (manage-scripts "Reload menu")
-  (run-script "new+clipboard")
-  (define filestring
-    (queue-callback/res
-     (λ ()
-       (send the-clipboard get-clipboard-string 0))))
-  (check-false (equal? "" filestring))
-  (check-true (file-exists? filestring))
-  (delete-file filestring))
+  (manage-scripts "Reload menu") ; WARNING: It is unknown when this will finish!
+  #;(sleep 60)
+  (run-script "abcdef")
+  (queue-callback/res
+   (λ ()
+     (check string-suffix?
+            (send (get-text) get-text)
+            "abcdef")))
+  (delete-file script-file))
