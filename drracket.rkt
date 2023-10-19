@@ -103,12 +103,14 @@
      (set! ensure-defs-has-focus-idx (+ 1 ensure-defs-has-focus-idx))
      (queue-callback/res (λ () (send (get-defs-canvas) focus)))
      ;; This should not be necessary since queue-callback/res is synchronous :/
+     (sleep 1)
      #;(poll-until (lambda () (send (get-defs-canvas) has-focus?))))
    (define (create-new-tab)
      (define n (send drr get-tab-count))
      (queue-callback/res
       (λ () (send drr create-new-tab)))
      ;; Make sure the tab is created.
+    (sleep 1)
      #;(poll-until (λ () (= (+ n 1) (send drr get-tab-count)))))
 
    ;; Call scripts on text editor
