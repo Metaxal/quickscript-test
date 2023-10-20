@@ -25,7 +25,8 @@
          (read-line))]))
 
 (define (run-script name)
-  (test:menu-select "Scripts" "Tests" name))
+  (test:menu-select "Scripts" "Tests" name)
+  (sleep/yield 1))
 
 (define (manage-scripts name)
   (test:menu-select "Scripts" "Manage" name))
