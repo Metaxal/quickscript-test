@@ -96,14 +96,8 @@
    (define drr (wait-for-drracket-frame))
    (define (get-defs-canvas) (send drr get-definitions-canvas))
    (define (get-text) (send drr get-definitions-text))
-   (define ensure-defs-has-focus-idx 0)
-   (define (ensure-defs-has-focus)
-     ;; debug info:
-     (printf "ensure-defs-has-focus call #~a\n" ensure-defs-has-focus-idx)
-     (set! ensure-defs-has-focus-idx (+ 1 ensure-defs-has-focus-idx))
-     (define the-defs-canvas (get-defs-canvas))
-     (queue-callback/res (λ () (send the-defs-canvas focus)))
-     (poll-until (λ () (send the-defs-canvas has-focus?))))
+   (define (move-focus-to-defs)
+     (queue-callback/res (λ () (send (get-defs-canvas) focus))))
    (define (create-new-tab)
      (define n (send drr get-tab-count))
      (queue-callback/res (λ () (send drr create-new-tab)))
@@ -111,11 +105,11 @@
      (poll-until (λ () (= (+ n 1) (send drr get-tab-count)))))
 
    ;; Call scripts on text editor
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
    (run-script "string-insert")
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
    (run-script "string-reverse")
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
    (queue-callback/res
     (λ ()
       (check string-suffix? ; suffix in case of a pre-inserted #lang line
@@ -124,7 +118,7 @@
 
    ;; output-to new-tab
    (run-script "output-to-new-tab")
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
    (queue-callback/res
     (λ ()
       (check-equal? (send drr get-tab-count)
@@ -140,11 +134,11 @@
               #t)
    ;;This does nothing but should not raise a compilation error exception.
    (run-script "test-compile")
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
 
    ;; Ask drracket to open file.
    (run-script "open-me")
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
    (queue-callback/res
     (λ ()
       (check-equal? (send drr get-tab-count)
@@ -164,25 +158,25 @@
 
    ;; Persistent.
    (create-new-tab)
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
    (run-script "show-counter")
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n0")))
    (run-script "increase-counter")
    (run-script "increase-counter")
    (run-script "increase-counter")
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n3")))
    (run-script "show-counter")
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n0")))
    ;; Unload persistent scripts.
    (manage-scripts "Stop persistent scripts")
    (run-script "increase-counter")
-   (ensure-defs-has-focus)
+   (move-focus-to-defs)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n1")))
 
