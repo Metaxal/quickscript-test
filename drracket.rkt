@@ -28,31 +28,50 @@
 ;; when creating a new script.
 (lib:add-third-party-script-directory! user-script-dir)
 
+
+;; A random number to avoid issues when several instances are run in parallel.
+(define process-id (random (expt 2 31)))
+
 ;; Make sure the scripts subdirectory is registered in Quickscript
 ;; so that the scripts appear in the menu.
-(define-runtime-path script-dir "scripts")
-(lib:add-third-party-script-directory! script-dir)
+(define-runtime-path here ".")
+(define orig-scripts-dir (build-path here "scripts"))
+(define scripts-dir (build-path here (format "scripts~a" process-id)))
+;; Create a special directory to avoid collisions if several tests are run at
+;; the same time.
+;; TODO: Need to clean up properly if break!
+(copy-directory/files orig-scripts-dir scripts-dir)
+(lib:add-third-party-script-directory! scripts-dir)
 (define lib (lib:load))
-(lib:exclude! lib script-dir "unbound-id.rkt")
-(lib:include! lib script-dir "unbound-id-not-skipped.rkt")
+(lib:exclude! lib scripts-dir "unbound-id.rkt")
+(lib:include! lib scripts-dir "unbound-id-not-skipped.rkt")
 (lib:save! lib)
 
 (define-logger qstest)
 
-(define test-compiled-old-zo (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.zo"))
-(define test-compiled-old-dep (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.dep"))
-(define test-compiled-zo (build-path script-dir "compiled" "test-compile_rkt.zo"))
-(define test-compiled-dep (build-path script-dir "compiled" "test-compile_rkt.dep"))
+;; Log data for easier automated parsing
+(define (qstest-log-data . data)
+  (log-qstest-info "~v" (cons process-id data)))
 
-(define test-compiled-cs-old-zo (build-path script-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.zo"))
-(define test-compiled-cs-old-dep (build-path script-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.dep"))
-(define test-compiled-cs-zo (build-path script-dir "compiled" "test-compile-cs_rkt.zo"))
-(define test-compiled-cs-dep (build-path script-dir "compiled" "test-compile-cs_rkt.dep"))
+(define (run-and-log name)
+  (qstest-log-data 'run-script name)
+  (run-script name)
+  (qstest-log-data 'exit-script name))
+
+(define test-compiled-old-zo (build-path scripts-dir "compiled-old" "test-compile_rkt--7.7.0.901.zo"))
+(define test-compiled-old-dep (build-path scripts-dir "compiled-old" "test-compile_rkt--7.7.0.901.dep"))
+(define test-compiled-zo (build-path scripts-dir "compiled" "test-compile_rkt.zo"))
+(define test-compiled-dep (build-path scripts-dir "compiled" "test-compile_rkt.dep"))
+
+(define test-compiled-cs-old-zo (build-path scripts-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.zo"))
+(define test-compiled-cs-old-dep (build-path scripts-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.dep"))
+(define test-compiled-cs-zo (build-path scripts-dir "compiled" "test-compile-cs_rkt.zo"))
+(define test-compiled-cs-dep (build-path scripts-dir "compiled" "test-compile-cs_rkt.dep"))
 
 
 ;; Scripts compiled with an old version of racket BC or CS should be recompiled
 ;; and not raise an exception.
-(make-directory* (build-path script-dir "compiled"))
+(make-directory* (build-path scripts-dir "compiled"))
 (copy-file test-compiled-old-zo
            test-compiled-zo
            #t)
@@ -68,21 +87,23 @@
 
 (define prefs `(,tools-prefs))
 
+(test:use-focus-table #true)
+
 (fire-up-drracket-and-run-tests
  #:prefs prefs
  (λ ()
    ;; The script "unbound-id-not-skipped" raises an exception on startup.
    ;; Click ok on the message box and deactivate the script (so as to avoid
    ;; further exceptions. TODO: deactivate it in Quickscript).
-   (log-qstest-info "Before exception dialog")
+   (qstest-log-data "Before exception dialog")
    (define exn-dialog (wait-for-dialog/frame "Quickscript: Error during compilation"))
    (check-not-false exn-dialog)
-   (log-qstest-info "Exception dialog found")
+   (qstest-log-data "Exception dialog found")
    ; deactivate early
-   (lib:exclude! lib script-dir "unbound-id-not-skipped.rkt")
+   (lib:exclude! lib scripts-dir "unbound-id-not-skipped.rkt")
    (lib:save! lib)
    (send exn-dialog focus)
-   (log-qstest-info "After exception dialog")
+   (qstest-log-data "After exception dialog")
    #;(display-window-hierarchy exn-dialog)
    (define bt-ok (find-widget exn-dialog (λ (x) (is-a? x button%))))
    (check-not-false bt-ok)
@@ -109,9 +130,9 @@
 
    ;; Call scripts on text editor
    (move-focus-to-defs)
-   (run-script "string-insert")
+   (run-and-log "string-insert")
    (move-focus-to-defs)
-   (run-script "string-reverse")
+   (run-and-log "string-reverse")
    (move-focus-to-defs)
    (queue-callback/res
     (λ ()
@@ -120,7 +141,7 @@
              "rotide eht si sihT")))
 
    ;; output-to new-tab
-   (run-script "output-to-new-tab")
+   (run-and-log "output-to-new-tab")
    (move-focus-to-defs)
    (queue-callback/res
     (λ ()
@@ -136,11 +157,11 @@
               test-compiled-dep
               #t)
    ;;This does nothing but should not raise a compilation error exception.
-   (run-script "test-compile")
+   (run-and-log "test-compile")
    (move-focus-to-defs)
 
    ;; Ask drracket to open file.
-   (run-script "open-me")
+   (run-and-log "open-me")
    (move-focus-to-defs)
    (queue-callback/res
     (λ ()
@@ -162,23 +183,23 @@
    ;; Persistent.
    (create-new-tab)
    (move-focus-to-defs)
-   (run-script "show-counter")
+   (run-and-log "show-counter")
    (move-focus-to-defs)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n0")))
-   (run-script "increase-counter")
-   (run-script "increase-counter")
-   (run-script "increase-counter")
+   (run-and-log "increase-counter")
+   (run-and-log "increase-counter")
+   (run-and-log "increase-counter")
    (move-focus-to-defs)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n3")))
-   (run-script "show-counter")
+   (run-and-log "show-counter")
    (move-focus-to-defs)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n0")))
    ;; Unload persistent scripts.
    (manage-scripts "Stop persistent scripts")
-   (run-script "increase-counter")
+   (run-and-log "increase-counter")
    (move-focus-to-defs)
    (queue-callback/res
     (λ () (check string-suffix? (send (get-text) get-text) "\n1")))
@@ -186,7 +207,8 @@
    ;; Create new script.
    (new-script-and-run drr)
 
-   (lib:remove-third-party-script-directory! script-dir)
+   (lib:remove-third-party-script-directory! scripts-dir)
+   (delete-directory/files scripts-dir)
    #;(displayln "All done.")
    #t))
 

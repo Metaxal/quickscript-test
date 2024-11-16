@@ -41,12 +41,15 @@
      )))
 
 (define (wait-for-dialog/frame title)
-  (define (wait-for-pred)
-    (findf (λ (top)
-             (equal? (send top get-label)
-                     title))
-           (get-top-level-windows)))
-  (poll-until wait-for-pred))
+  (let loop ()
+    (define wins (get-top-level-windows))
+    (define labels (map (λ (win) (send win get-plain-label)) wins))
+    #;(writeln labels)
+    (define diag (findf (λ (win) (equal? title (send win get-plain-label))) wins))
+    (cond [diag]
+          [else
+           (sleep/yield 0.1)
+           (loop)])))
 
 (define (wait-for-pending-actions)
   (poll-until (λ () (= 0 (test:number-pending-actions)))))
