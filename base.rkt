@@ -26,7 +26,7 @@
 
 (define (run-script name)
   (test:menu-select "Scripts" "Tests" name)
-  (sleep/yield 1))
+  (sleep/yield 0.5))
 
 (define (manage-scripts name)
   (test:menu-select "Scripts" "Manage" name))
@@ -99,7 +99,7 @@
   (define (get-canvas) (send drr get-definitions-canvas))
   (define (get-text) (send drr get-definitions-text))
   ; random name.
-  (define new-script-name (format "script-~a" (current-milliseconds)))
+  (define new-script-name (format "script-~a-~a" (current-milliseconds) (random (expt 2 31))))
   (manage-scripts "New script…")
   ;; For this to work, get-text-from-user (tool.rkt) must use
   ;; #:dialog-mixin frame:focus-table-mixin.
