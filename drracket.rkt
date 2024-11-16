@@ -9,6 +9,9 @@
          quickscript/base
          "base.rkt")
 
+;;; To run in parallel (important for focus checking):
+;;; $ parallel racket -t drracket.rkt -- -q -q -q
+
 ;;; To debug:
 ;;; export PLTSTDERR="debug@quickscript debug@qstest" && racket -l quickscript-test/drracket
 ;;; Or
