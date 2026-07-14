@@ -27,6 +27,7 @@
 (define-hook* on-tab-close #:tab tab)
 (define-hook* on-tab-change #:tab-from ft #:tab-to tt)
 (define-hook* after-create-new-tab)
+(define-hook* on-focus)
 
 ;; An error should be shown for this one:
 ;; This is now done at the syntax level.

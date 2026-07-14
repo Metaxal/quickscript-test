@@ -88,6 +88,7 @@
    ;; Load a file in the first untouched empty tab
    (handler:edit-file string-reverse-script-path)
    (check-hook-messages
+    "qs-test: hook: on-focus\n"
     (prx (format "qs-test: hook: after-load-file\n[#:file ARG~a]\n[#:in-new-tab? #f]\n"
                  string-reverse-filename)))
 
@@ -95,12 +96,14 @@
    (create-new-tab)
    (check-hook-messages
     prx-on-tab-change
+    "qs-test: hook: on-focus\n"
     (prx "qs-test: hook: after-create-new-tab\n"))
 
    ;; Open file in new tab
    (create-new-tab all-hooks-path)
    (check-hook-messages
     prx-on-tab-change
+    "qs-test: hook: on-focus\n"
     (prx (format "qs-test: hook: after-load-file\n[#:file ARG~a]\n[#:in-new-tab? #t]\n"
                  all-hooks-filename)))
 
@@ -113,6 +116,11 @@
      (check-hook-messages
       (prx "qs-test: hook: on-tab-close\n")
       prx-on-tab-change))
+
+   ;; Test on-focus hook explicitly
+   (queue-callback/res (λ () (send drr on-activate #f)))
+   (queue-callback/res (λ () (send drr on-activate #t)))
+   (check-hook-messages "qs-test: hook: on-focus\n")
 
    ;; TODO: save file hook
 
